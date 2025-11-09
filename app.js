@@ -42,7 +42,6 @@ app.post('/fetch', async (req, res) => {
         if (content && $(el).children().length === 0) {
           // Replace Yale with Fale in text content only
           content = content.replace(/Yale/g, 'Fale').replace(/yale/g, 'fale');
-
           $(el).html(content);
         }
       }
