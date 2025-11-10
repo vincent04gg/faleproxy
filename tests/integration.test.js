@@ -2,6 +2,7 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const { exec } = require('child_process');
 const { promisify } = require('util');
+const fs = require('fs');
 const execAsync = promisify(exec);
 const { sampleHtmlWithYale } = require('./test-utils');
 const nock = require('nock');
@@ -17,9 +18,10 @@ describe('Integration Tests', () => {
     nock.disableNetConnect();
     nock.enableNetConnect('127.0.0.1');
     
-    // Create a temporary test app file
-    await execAsync('cp app.js app.test.js');
-    await execAsync(`sed -i '' 's/const PORT = 3001/const PORT = ${TEST_PORT}/' app.test.js`);
+    // Create a temporary test app file with modified port
+    const appContent = fs.readFileSync('app.js', 'utf8');
+    const modifiedAppContent = appContent.replace(/const PORT = 3001/g, `const PORT = ${TEST_PORT}`);
+    fs.writeFileSync('app.test.js', modifiedAppContent);
     
     // Start the test server
     server = require('child_process').spawn('node', ['app.test.js'], {
