@@ -32,19 +32,20 @@ app.post('/fetch', async (req, res) => {
     // Use cheerio to parse HTML and selectively replace text content, not URLs
     const $ = cheerio.load(html);
     
-    // Function to replace text but skip URLs and attributes
-    function replaceYaleWithFale(i, el) {
-      if ($(el).children().length === 0 || $(el).text().trim() !== '') {
-        // Get the HTML content of the element
-        let content = $(el).html();
-        
-        // Only process if it's a text node
-        if (content && $(el).children().length === 0) {
-          // Replace Yale with Fale in text content only
-          content = content.replace(/Yale/g, 'Fale').replace(/yale/g, 'fale');
-          $(el).html(content);
-        }
-      }
+    // Function to replace Yale with Fale preserving case
+    function replaceYaleWithFale(text) {
+      return text.replace(/\bYale\b/gi, (match) => {
+        // Preserve case pattern: YALE -> FALE, Yale -> Fale, yale -> fale
+        if (match === 'YALE') return 'FALE';
+        if (match === 'Yale') return 'Fale';
+        if (match === 'yale') return 'fale';
+        // Handle other case variations - check if all uppercase
+        if (match === match.toUpperCase()) return 'FALE';
+        // Check if first letter is uppercase
+        if (match[0] === match[0].toUpperCase()) return 'Fale';
+        // Otherwise lowercase
+        return 'fale';
+      });
     }
     
     // Process text nodes in the body
@@ -53,14 +54,14 @@ app.post('/fetch', async (req, res) => {
     }).each(function() {
       // Replace text content but not in URLs or attributes
       const text = $(this).text();
-      const newText = text.replace(/Yale/g, 'Fale').replace(/yale/g, 'fale');
+      const newText = replaceYaleWithFale(text);
       if (text !== newText) {
         $(this).replaceWith(newText);
       }
     });
     
     // Process title separately
-    const title = $('title').text().replace(/Yale/g, 'Fale').replace(/yale/g, 'fale');
+    const title = replaceYaleWithFale($('title').text());
     $('title').text(title);
     
     return res.json({ 
